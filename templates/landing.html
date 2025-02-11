@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>App Hub</title>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/landing.css') }}">
+  <style>
+    body { min-height: 100vh; display: flex; flex-direction: column; }
+    .container { flex-grow: 1; }
+    .logout-container { position: fixed; bottom: 20px; right: 20px; }
+  </style>
+</head>
+<body>
+  <div class="container mt-4">
+    <h1 class="text-center">Welcome to App Hub</h1>
+    <div class="cards">
+      <div class="card">
+        <h2>Pomodoro Clock</h2>
+        <p>Focus on your tasks with our Pomodoro Timer.</p>
+        <a href="/pomodoro" class="btn btn-primary">Launch Pomodoro</a>
+      </div>
+      <div class="card">
+        <h2>Quiz App</h2>
+        <p>Test your knowledge with our interactive quiz.</p>
+        <a href="/quiz" class="btn btn-success">Launch Quiz App</a>
+      </div>
+      <div class="card">
+        <h2>Journal</h2>
+        <p>Record your thoughts and reflections.</p>
+        <a href="/journal" class="btn btn-secondary">Coming Soon</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Logout button positioned at the bottom right -->
+  <div class="logout-container">
+    <a href="/logout" class="btn btn-danger">Logout</a>
+  </div>
+</body>
+</html>

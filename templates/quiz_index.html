@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Question Generator</title>
+  <!-- Bootstrap CSS -->
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <!-- Custom Quiz CSS -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/quiz.css') }}">
+</head>
+<body>
+  <div class="container mt-5">
+    <h1 class="text-center mb-4">Generate Questions from Your Document</h1>
+    <form action="/generate" method="POST" enctype="multipart/form-data">
+      <div class="form-group">
+        <label for="file">Upload your document (PDF, TXT, DOCX):</label>
+        <input type="file" name="file" class="form-control-file" required>
+      </div>
+      <button type="submit" class="btn btn-primary">Generate Questions</button>
+    </form>
+  </div>
+  <!-- Bootstrap JS and dependencies -->
+  <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

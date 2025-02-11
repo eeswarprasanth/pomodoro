@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Answer the Questions</title>
+  <!-- Bootstrap CSS -->
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <!-- Custom Quiz CSS -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/quiz.css') }}">
+</head>
+<body>
+  <div class="container mt-5">
+    <h1 class="text-center mb-4">Answer the Questions</h1>
+    <form action="/evaluate" method="POST">
+      <input type="hidden" name="doc_text" value="{{ doc_text }}">
+      {% for question in questions %}
+        <div class="question-block mb-3 p-3">
+          <p>{{ question }}</p>
+          <input type="hidden" name="question{{ loop.index }}" value="{{ question }}">
+          <textarea name="answer{{ loop.index }}" class="form-control" placeholder="Type your answer here..." required></textarea>
+        </div>
+      {% endfor %}
+      <button type="submit" class="btn btn-primary">Submit Answers for Evaluation</button>
+    </form>
+  </div>
+  <!-- Bootstrap JS and dependencies -->
+  <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
