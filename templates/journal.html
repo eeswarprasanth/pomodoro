@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Journal</title>
+  <!-- Bootstrap CSS -->
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <!-- Custom Journal CSS (inline or external) -->
+  <style>
+    body { background-color: #1e213f; color: #d7e0ff; }
+    .journal-entry {
+      background: #151932;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 15px;
+      position: relative;
+    }
+    .entry-actions {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+    }
+    .entry-actions a, .entry-actions form {
+      display: inline-block;
+    }
+    .add-button {
+      position: fixed;
+      bottom: 30px;
+      right: 30px;
+      z-index: 1000;
+      border-radius: 50%;
+      width: 60px;
+      height: 60px;
+      font-size: 36px;
+      text-align: center;
+      line-height: 60px;
+      background-color: #28a745;
+      color: #fff;
+      cursor: pointer;
+    }
+    .home-button {
+    position: fixed; 
+    bottom: 20px; 
+    left: 20px; 
+    z-index: 1000; 
+    text-decoration: none; 
+    background-color: #2e325a;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    padding: 10px 20px;
+    cursor: pointer;
+    transition: all 0.2s ease-in;
+    }
+  </style>
+</head>
+<body>
+  <div class="container mt-4">
+    <h1 class="text-center mb-4">Your Journal</h1>
+    {% if journals %}
+      {% for journal in journals %}
+        <div class="journal-entry">
+          <div class="entry-actions">
+            <a href="/journal/edit/{{ journal['id'] }}" class="btn btn-sm btn-info">Edit</a>
+            <form action="/journal/delete/{{ journal['id'] }}" method="POST" style="display:inline;">
+              <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+            </form>
+          </div>
+          <p>{{ journal['content'] }}</p>
+          <small>Created at: {{ journal['created_at'] }}</small>
+        </div>
+      {% endfor %}
+    {% else %}
+      <p class="text-center">No journal entries yet. Click the plus button to add one!</p>
+    {% endif %}
+  </div>
+
+  <!-- Floating Plus Button for Adding a New Journal Entry -->
+  <div class="add-button" data-toggle="modal" data-target="#addJournalModal">+</div>
+
+  <!-- Modal for Adding Journal Entry -->
+  <div class="modal fade" id="addJournalModal" tabindex="-1" aria-labelledby="addJournalModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content bg-dark text-light">
+        <div class="modal-header">
+          <h5 class="modal-title" id="addJournalModalLabel">New Journal Entry</h5>
+          <button type="button" class="close text-light" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <form action="/journal" method="POST">
+          <div class="modal-body">
+            <div class="form-group">
+              <label for="content">Entry</label>
+              <textarea class="form-control" id="content" name="content" rows="5" placeholder="Write your thoughts here..." required></textarea>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            <button type="submit" class="btn btn-primary">Save Entry</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  <div class="home-button">
+    <a href="/landing" style="color: inherit; text-decoration: none; display: block;">
+        Back to Home
+      </a>
+  </div>  
+  <!-- Bootstrap JS and dependencies -->
+  <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

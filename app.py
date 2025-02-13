@@ -1,11 +1,11 @@
 import os
 import json
-from flask import Flask, render_template, request ,send_from_directory, redirect, session, url_for
+from flask import Flask, render_template, request ,send_from_directory, redirect, session, url_for, g, abort
+import sqlite3
 import pdfplumber
 import docx
 from werkzeug.utils import secure_filename
 import google.generativeai as genai
-import markdown
 
 os.environ["GOOGLE_API_KEY"] = "AIzaSyCcWZCBDhEWLhu5zFBf7vn00bS3VXbA1Lk"
 genai.configure(api_key=os.environ["GOOGLE_API_KEY"])
@@ -15,6 +15,7 @@ app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'uploads/'
 app.config['ALLOWED_EXTENSIONS'] = {'pdf', 'txt', 'docx'}
 app.config['SECRET_KEY'] = 'my_simple_secret_key_123'
+DATABASE = os.path.join(app.root_path, "database.db")
 users = {}
 
 def allowed_file(filename):
@@ -77,9 +78,59 @@ def evaluate_answers(doc_text, qas):
     return evaluation
 
 
+def get_db():
+    db = getattr(g, '_database', None)
+    if db is None:
+        db = g._database = sqlite3.connect(DATABASE)
+        db.row_factory = sqlite3.Row  # enable dict-like access to rows
+    return db
+
+@app.teardown_appcontext
+def close_connection(exception):
+    db = getattr(g, '_database', None)
+    if db is not None:
+        db.close()
+
+@app.after_request
+def add_header(response):
+    response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    return response
+
+
+def init_db():
+    with app.app_context():
+        db = get_db()
+        cursor = db.cursor()
+        # Create users table
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS users (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                username TEXT UNIQUE NOT NULL,
+                password TEXT NOT NULL
+            )
+        ''')
+        # Create journals table
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS journals (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                content TEXT NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY(user_id) REFERENCES users(id)
+            )
+        ''')
+        db.commit()
+
+# Initialize the database when the app starts
+init_db()
+
+
+
 @app.route("/")
 def home():
-    if "username" not in session:
+    if "user_id" not in session:
         return redirect(url_for("login"))
     return redirect(url_for("landing"))
 
@@ -88,33 +139,97 @@ def login():
     if request.method == "POST":
         username = request.form["username"]
         password = request.form["password"]
-        if username in users and users[username] == password:
-            session["username"] = username
+        db = get_db()
+        cursor = db.execute("SELECT id, password FROM users WHERE username = ?", (username,))
+        user = cursor.fetchone()
+        if user and user["password"] == password:  # Use hashed passwords in production
+            session.clear()  # Clear any existing session data
+            session["user_id"] = user["id"]
+            session.permanent = False  # Ensure the session cookie is not permanent
             return redirect(url_for("landing"))
         return "Invalid credentials. Try again."
     return render_template("login.html")
+
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
     if request.method == "POST":
         username = request.form["username"]
         password = request.form["password"]
-        if username in users:
+        db = get_db()
+        try:
+            db.execute("INSERT INTO users (username, password) VALUES (?, ?)", (username, password))
+            db.commit()
+        except sqlite3.IntegrityError:
             return "Username already exists."
-        users[username] = password
         return redirect(url_for("login"))
     return render_template("register.html")
 
 @app.route("/logout")
 def logout():
-    session.pop("username", None)
+    session.clear()
     return redirect(url_for("login"))
+
 
 @app.route("/landing")
 def landing():
-    if "username" not in session:
+    if "user_id" not in session:
         return redirect(url_for("login"))
-    return render_template("landing.html")
+    db = get_db()
+    cursor = db.execute("SELECT username FROM users WHERE id = ?", (session["user_id"],))
+    user = cursor.fetchone()
+    username = user["username"] if user else "User"
+    return render_template("landing.html", username=username)
+
+
+@app.route("/journal", methods=["GET", "POST"])
+def journal():
+    if "user_id" not in session:
+        return redirect(url_for("login"))
+    db = get_db()
+    user_id = session["user_id"]
+    if request.method == "POST":
+        content = request.form["content"]
+        db.execute("INSERT INTO journals (user_id, content) VALUES (?, ?)", (user_id, content))
+        db.commit()
+        return redirect(url_for("journal"))
+    # Retrieve journal entries for the current user
+    cursor = db.execute("SELECT id, content, created_at FROM journals WHERE user_id = ? ORDER BY created_at DESC", (user_id,))
+    journals = cursor.fetchall()
+    return render_template("journal.html", journals=journals)
+
+@app.route("/journal/delete/<int:journal_id>", methods=["POST"])
+def delete_journal(journal_id):
+    if "user_id" not in session:
+        return redirect(url_for("login"))
+    db = get_db()
+    user_id = session["user_id"]
+    # Ensure the journal belongs to the current user
+    cursor = db.execute("SELECT id FROM journals WHERE id = ? AND user_id = ?", (journal_id, user_id))
+    journal = cursor.fetchone()
+    if journal is None:
+        abort(404)
+    db.execute("DELETE FROM journals WHERE id = ?", (journal_id,))
+    db.commit()
+    return redirect(url_for("journal"))
+
+@app.route("/journal/edit/<int:journal_id>", methods=["GET", "POST"])
+def edit_journal(journal_id):
+    if "user_id" not in session:
+        return redirect(url_for("login"))
+    db = get_db()
+    user_id = session["user_id"]
+    # Ensure the journal belongs to the current user
+    cursor = db.execute("SELECT id, content FROM journals WHERE id = ? AND user_id = ?", (journal_id, user_id))
+    journal = cursor.fetchone()
+    if journal is None:
+        abort(404)
+    if request.method == "POST":
+        new_content = request.form["content"]
+        db.execute("UPDATE journals SET content = ? WHERE id = ?", (new_content, journal_id))
+        db.commit()
+        return redirect(url_for("journal"))
+    return render_template("edit_journal.html", journal=journal)
 
 @app.route('/generate', methods=['POST'])
 def generate_questions():
@@ -151,11 +266,6 @@ def quiz():
 def pomodoro():
     # Serve the Pomodoro clock index page from the static folder
     return send_from_directory('static/pomodoro', 'index.html')
-
-@app.route('/journal')
-def journal():
-    # Placeholder route for Journal (coming soon)
-    return "<h1>Journal Coming Soon!</h1>"
 
 if __name__ == "__main__":
     os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)

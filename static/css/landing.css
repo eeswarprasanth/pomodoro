@@ -31,13 +31,14 @@ h1 {
   background: #151932;
   border-radius: 8px;
   box-shadow: 20px 20px 42px #0e1021, -20px -20px 42px #1c2244;
+  display: flex;
   width: 300px;
   padding: 20px;
   text-align: left;
   color: #d7e0ff;
-  transition: transform 0.2s ease-in-out;
+  transition: transform 0.2sease-in-out;
+  justify-content: space-evenly;
 }
-
 .card:hover {
   transform: scale(1.03);
 }
@@ -50,6 +51,7 @@ h1 {
 .card p {
   margin: 15px 0;
   color: #d7e0ff;
+  padding-top: 0;
 }
 
 .btn {

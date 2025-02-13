@@ -71,3 +71,18 @@ pre {
   white-space: pre-wrap;
   color: #d7e0ff;
 }
+
+.home-button {
+  position: fixed; 
+  bottom: 20px; 
+  left: 20px; 
+  z-index: 1000; 
+  text-decoration: none; 
+  background-color: #2e325a;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  padding: 10px 20px;
+  cursor: pointer;
+  transition: all 0.2s ease-in;
+}
