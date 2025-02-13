@@ -7,7 +7,7 @@ import docx
 from werkzeug.utils import secure_filename
 import google.generativeai as genai
 
-os.environ["GOOGLE_API_KEY"] = "AIzaSyCcWZCBDhEWLhu5zFBf7vn00bS3VXbA1Lk"
+os.environ["GOOGLE_API_KEY"] = "Enter-your-api-key"
 genai.configure(api_key=os.environ["GOOGLE_API_KEY"])
 model = genai.GenerativeModel("gemini-1.5-flash")
 
